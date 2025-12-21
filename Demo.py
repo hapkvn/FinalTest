@@ -1,70 +1,51 @@
 import requests
 import json
-from cassandra.cluster import Cluster
-from datetime import datetime
-import time
 
 # 1. Cấu hình
-TOMTOM_KEY = "ongdJdbk2vMblJsUqljZ9PUmflEntbzI"
-POINTS_TO_MONITOR = [
-    {"name": "Nga_Tu_So", "lat": 21.0025, "lon": 105.8200},
-    {"name": "Cau_Giay", "lat": 21.0345, "lon": 105.7950}
-    # Thêm các điểm nóng giao thông bạn muốn theo dõi vào đây
-]
+API_KEY = "YOUR_TOMTOM_API_KEY_HERE"
+LAT = 21.0025  # Ví dụ: Ngã Tư Sở, Hà Nội
+LON = 105.8200
+ZOOM = 10
 
-# 2. Kết nối Cassandra
-cluster = Cluster(['127.0.0.1']) # IP của Cassandra
-session = cluster.connect()
-session.execute("""
-    CREATE KEYSPACE IF NOT EXISTS traffic_keyspace 
-    WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 }
-""")
-session.set_keyspace('traffic_keyspace')
-session.execute("""
-    CREATE TABLE IF NOT EXISTS traffic_status (
-        sensor_id text,
-        timestamp timestamp,
-        lat double,
-        lon double,
-        current_speed int,
-        free_flow_speed int,
-        congestion_ratio double,
-        PRIMARY KEY (sensor_id, timestamp)
-    )
-""")
+# 2. Tạo URL
+url = f"https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key=ongdJdbk2vMblJsUqljZ9PUmflEntbzI&point=21.0025,105.8200"
 
-# 3. Hàm lấy dữ liệu từ TomTom
-def get_traffic_data(lat, lon):
-    # Endpoint: Flow Segment Data
-    url = f"https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key={TOMTOM_KEY}&point={lat},{lon}"
-    try:
-        response = requests.get(url)
+# 3. Gửi Request
+try:
+    response = requests.get(url)
+    
+    if response.status_code == 200:
         data = response.json()
         
-        # Phân tích JSON trả về
-        flow_data = data['flowSegmentData']
-        current_speed = flow_data['currentSpeed']
-        free_flow_speed = flow_data['freeFlowSpeed']
+        # 4. Bóc tách dữ liệu quan trọng (Parsing)
+        flow_data = data.get('flowSegmentData', {})
         
-        # Tính tỷ lệ tắc nghẽn (0.0 -> 1.0)
-        ratio = current_speed / free_flow_speed if free_flow_speed > 0 else 0
+        # Tốc độ xe hiện tại (đang di chuyển thực tế)
+        current_speed = flow_data.get('currentSpeed')
         
-        return current_speed, free_flow_speed, ratio
-    except Exception as e:
-        print(f"Lỗi gọi API: {e}")
-        return 0, 0, 0
+        # Tốc độ lý tưởng (khi đường thông thoáng)
+        free_flow_speed = flow_data.get('freeFlowSpeed')
+        
+        # Thời gian di chuyển hết đoạn đường này (giây)
+        current_travel_time = flow_data.get('currentTravelTime')
+        
+        # Tọa độ vẽ đường (Shape): Dùng để vẽ line lên bản đồ Grafana nếu cần
+        coordinates = flow_data.get('coordinates', {}).get('coordinate', [])
+        
+        print(f"--- Tình trạng giao thông tại {LAT}, {LON} ---")
+        print(f"Tốc độ hiện tại: {current_speed} km/h")
+        print(f"Tốc độ chuẩn: {free_flow_speed} km/h")
+        
+        # Logic phát hiện tắc đường đơn giản
+        if current_speed < (free_flow_speed * 0.5):
+            print("=> CẢNH BÁO: Đang tắc đường nghiêm trọng!")
+        elif current_speed < (free_flow_speed * 0.8):
+             print("=> Lưu ý: Đường đông.")
+        else:
+            print("=> Đường thông thoáng.")
+            
+    else:
+        print(f"Lỗi API: {response.status_code} - {response.text}")
 
-# 4. Vòng lặp thu thập (Real-time)
-while True:
-    for point in POINTS_TO_MONITOR:
-        c_speed, f_speed, ratio = get_traffic_data(point['lat'], point['lon'])
-        
-        # Ghi vào Cassandra
-        query = """
-            INSERT INTO traffic_status (sensor_id, timestamp, lat, lon, current_speed, free_flow_speed, congestion_ratio)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        session.execute(query, (point['name'], datetime.now(), point['lat'], point['lon'], c_speed, f_speed, ratio))
-        print(f"Đã ghi: {point['name']} - Ratio: {ratio:.2f}")
-        
-    time.sleep(60) # Chờ 60 giây trước khi cập nhật lại (TomTom update mỗi 1 phút)
+except Exception as e:
+    print(f"Lỗi kết nối: {e}")
