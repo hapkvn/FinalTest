@@ -28,10 +28,12 @@ Lệnh này sẽ tự động tải MongoDB về và chạy.
   Bây giờ mọi thứ đã sẵn sàng, bạn mở 2 cửa sổ Terminal để chạy như bình thường:
 
 Terminal 1 (Web Server):
+
 # Nhớ activate venv trước nếu mở cửa sổ mới
     python -m backend.app
   (hoặc python3 ...)
-Terminal 2 (Data Generator):
+  
+  Terminal 2 (Data Generator):
 
     python data_generator.py
   (hoặc python3 ...)
