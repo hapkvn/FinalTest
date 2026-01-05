@@ -5,8 +5,26 @@
 ---Chú ý: -> Trước khi code hãy ĐẢM BẢO đã lấy code mới nhất trên github, dùng lệnh 'git pull' để lấy code về máy sau đó mới code. -> Branch chính là 'main', đừng nhầm lẫn :>
 
 
-# 1. Dán kết nối api 
-file config.py
+# 1. Cấu hình hệ thống
+Nếu dùng window sửa file docker-compose.yml thành:
+
+    version: '3.8'
+    services:
+      mongo:
+        image: mongo:latest
+        container_name: mongodb_traffic
+        restart: always
+        ports:
+          - "27017:27017"
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: password
+        volumes:
+          - mongodb_data:/data/db
+    volumes:
+      mongodb_data:
+      
+sửa file config.py
 
 class Config:
   
