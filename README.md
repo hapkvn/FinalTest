@@ -7,9 +7,7 @@
 # 1. Bật Database (Chạy 1 lần duy nhất)
 Mở Terminal (CMD/PowerShell/Ubuntu Terminal) tại thư mục dự án:
 
-Bash
-
-docker-compose up -d
+    docker-compose up -d
 Lệnh này sẽ tự động tải MongoDB về và chạy.
 
 # 2. Cài đặt thư viện Python (Chạy 1 lần duy nhất)
@@ -22,8 +20,7 @@ Lệnh này sẽ tự động tải MongoDB về và chạy.
     pip install -r requirements.txt
 
   Ubuntu/Mac:
-
-
+  
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
@@ -32,6 +29,9 @@ Lệnh này sẽ tự động tải MongoDB về và chạy.
 
 Terminal 1 (Web Server):
 # Nhớ activate venv trước nếu mở cửa sổ mới
-    python -m backend.app  (hoặc python3 ...)
+    python -m backend.app
+  (hoặc python3 ...)
 Terminal 2 (Data Generator):
-    python data_generator.py (hoặc python3 ...)
+
+    python data_generator.py
+  (hoặc python3 ...)
