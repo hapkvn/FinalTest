@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongodb_traffic
+    restart: always
+    
+    # --- QUAN TRỌNG: Giữ dòng này ---
+    network_mode: "host"
+    
+    # --- QUAN TRỌNG: Đã XÓA phần ports ở đây ---
+    # (Tuyệt đối không được để dòng ports: - "27017:27017")
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hệ Thống Giao Thông Thông Minh</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body { margin: 0; display: flex; font-family: 'Segoe UI', sans-serif; }
+        #sidebar { width: 320px; padding: 20px; background: white; border-right: 1px solid #ddd; height: 100vh; z-index: 1000; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        #map { flex: 1; height: 100vh; background: #e5e9f2; }
+        
+        h2 { margin-top: 0; color: #2c3e50; }
+        
+        /* CSS cho Input */
+        .input-group { margin-bottom: 5px; position: relative; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; color: #555; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; transition: 0.3s; }
+        input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
+        
+        /* CSS cho nút Tìm kiếm */
+        button.search-btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; margin-top: 15px; }
+        button.search-btn:hover { background: #0056b3; }
+        button.search-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* --- CSS MỚI: Nút Hoán Đổi (Swap) --- */
+        .swap-container { 
+            text-align: center; 
+            margin: -10px 0; /* Kéo nút đè lên khoảng cách giữa 2 input */
+            position: relative; 
+            z-index: 10; 
+            height: 30px; /* Chiều cao vùng chứa */
+        }
+        .swap-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #007bff;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .swap-btn:hover {
+            background: #f8f9fa;
+            transform: rotate(180deg); /* Hiệu ứng xoay khi di chuột */
+            border-color: #007bff;
+        }
+
+        .stat-box { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #eee; }
+        .legend { margin-top: 15px; font-size: 13px; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 5px; }
+        .color-box { width: 25px; height: 5px; margin-right: 10px; border-radius: 2px; }
+
+        
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>🚀 Traffic Monitor</h2>
+        
+        <div class="input-group">
+            <label>Điểm đi:</label>
+            <input type="text" id="start" placeholder="VD: Đại học Bách Khoa Hà Nội">
+        </div>
+
+        <div class="swap-container">
+            <button class="swap-btn" onclick="swapLocations()" title="Hoán đổi vị trí">⇅</button>
+        </div>
+
+        <div class="input-group">
+            <label>Điểm đến:</label>
+            <input type="text" id="end" placeholder="VD: Hồ Tây">
+        </div>
+
+        <button onclick="findRoute()" id="btnSearch" class="search-btn">🔍 Tìm Đường Mới</button>
+        
+        <div class="legend">
+            <h4>Chú thích:</h4>
+            <div class="legend-item"><span class="color-box" style="background:#00C851"></span> Thông thoáng (>40km/h)</div>
+            <div class="legend-item"><span class="color-box" style="background:#ffbb33"></span> Đông đúc (20-40km/h)</div>
+            <div class="legend-item"><span class="color-box" style="background:#ff4444"></span> Tắc nghẽn (20km/h)</div>
+        </div>
+
+        <div class="stat-box">
+            <h3>📊 Thống Kê</h3>
+            <p>🔴 Đoạn tắc: <b id="danger" style="color:red">0</b></p>
+            <p>🟢 Đoạn thoáng: <b id="safe" style="color:green">0</b></p>
+        </div>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([21.0285, 105.8542], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        
+        var baseRouteLayer = L.layerGroup().addTo(map);
+        var trafficLayer = L.layerGroup().addTo(map);
+        var trafficInterval = null; 
+
+        // --- HÀM MỚI: Xử lý hoán đổi ---
+        function swapLocations() {
+            var startInput = document.getElementById('start');
+            var endInput = document.getElementById('end');
+            
+            // Lưu giá trị cũ vào biến tạm
+            var temp = startInput.value;
+            
+            // Tráo đổi giá trị
+            startInput.value = endInput.value;
+            endInput.value = temp;
+
+            // Hiệu ứng visual (nháy màu để người dùng biết đã đổi)
+            startInput.style.backgroundColor = "#e8f0fe";
+            endInput.style.backgroundColor = "#e8f0fe";
+            setTimeout(() => {
+                startInput.style.backgroundColor = "white";
+                endInput.style.backgroundColor = "white";
+            }, 300);
+        }
+
+        async function findRoute() {
+            var start = document.getElementById('start').value;
+            var end = document.getElementById('end').value;
+            var btn = document.getElementById('btnSearch');
+
+            if(!start || !end) return alert("Vui lòng nhập đủ thông tin!");
+
+            if (trafficInterval) {
+                clearInterval(trafficInterval);
+                trafficInterval = null;
+            }
+
+            baseRouteLayer.clearLayers();
+            trafficLayer.clearLayers();
+            document.getElementById('danger').innerText = "0";
+            document.getElementById('safe').innerText = "0";
+
+            btn.innerText = "⏳ Đang tính toán...";
+            btn.disabled = true;
+
+            try {
+                var res = await fetch('/api/find-route', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({start, end})
+                });
+                var data = await res.json();
+
+                if(data.status === 'success') {
+                    var latlngs = data.route.map(p => [p.latitude, p.longitude]);
+                    L.polyline(latlngs, {color: 'gray', weight: 8, opacity: 0.2}).addTo(baseRouteLayer);
+                    map.fitBounds(latlngs, {padding: [50, 50]});
+
+                    updateTraffic();
+                    trafficInterval = setInterval(updateTraffic, 3000);
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) {
+                alert("Lỗi kết nối server!");
+                console.error(e);
+            } finally {
+                btn.innerText = "🔍 Tìm Đường Mới";
+                btn.disabled = false;
+            }
+        }
+
+        async function updateTraffic() {
+            try {
+                var res = await fetch('/api/traffic-data');
+                var data = await res.json();
+                
+                trafficLayer.clearLayers();
+                var dangerCount = 0; var safeCount = 0;
+
+                data.forEach(seg => {
+                    var color = '#00C851';
+                    if (seg.congestion_level > 0.3) color = '#ffbb33';
+                    if (seg.congestion_level > 0.6) color = '#ff4444';
+
+                    if (seg.congestion_level > 0.5) dangerCount++; else safeCount++;
+
+                    if (seg.shape && seg.shape.length > 0) {
+                        var latlngs = seg.shape.map(p => [p.latitude, p.longitude]);
+                        L.polyline(latlngs, {
+                            color: color, weight: 6, opacity: 0.9, smoothFactor: 1
+                        }).bindPopup(`<b>${seg.name}</b><br>Tốc độ: ${seg.speed} km/h`).addTo(trafficLayer);
+                    }
+                });
+                document.getElementById('danger').innerText = dangerCount;
+                document.getElementById('safe').innerText = safeCount;
+            } catch (e) { console.log("Waiting..."); }
+        }
+    </script>
+</body>
+</html>
