@@ -21,9 +21,11 @@ class Config:
 
 # 1. Bật Database (Chạy 1 lần duy nhất)
 Mở Terminal (CMD/PowerShell/Ubuntu Terminal) tại thư mục dự án:
+ PHẢI BẬT DOCKER DESKTOP TRONG SUỐT QUÁ TRÌNH CHẠY
+ Lệnh này sẽ tự động tải MongoDB về và chạy.
 
     docker-compose up -d
-Lệnh này sẽ tự động tải MongoDB về và chạy.
+
 
 # 2. Cài đặt thư viện Python (Chạy 1 lần duy nhất)
   Vẫn ở Terminal đó, chạy lần lượt:
@@ -33,7 +35,7 @@ Lệnh này sẽ tự động tải MongoDB về và chạy.
     python -m venv venv
     venv\Scripts\activate
     pip install -r requirements.txt
-  PHẢI BẬT DOCKER DESKTOP TRONG SUỐT QUÁ TRÌNH CHẠY 
+ 
 
   Ubuntu/Mac:
   
