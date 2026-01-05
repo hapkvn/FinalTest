@@ -21,7 +21,9 @@ class Config:
 
 # 1. Bật Database (Chạy 1 lần duy nhất)
 Mở Terminal (CMD/PowerShell/Ubuntu Terminal) tại thư mục dự án:
+
  PHẢI BẬT DOCKER DESKTOP TRONG SUỐT QUÁ TRÌNH CHẠY
+ 
  Lệnh này sẽ tự động tải MongoDB về và chạy.
 
     docker-compose up -d
