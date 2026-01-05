@@ -4,7 +4,7 @@
 
 ---Chú ý: -> Trước khi code hãy ĐẢM BẢO đã lấy code mới nhất trên github, dùng lệnh 'git pull' để lấy code về máy sau đó mới code. -> Branch chính là 'main', đừng nhầm lẫn :>
 
-1. Bật Database (Chạy 1 lần duy nhất)
+# 1. Bật Database (Chạy 1 lần duy nhất)
 Mở Terminal (CMD/PowerShell/Ubuntu Terminal) tại thư mục dự án:
 
 Bash
@@ -12,34 +12,26 @@ Bash
 docker-compose up -d
 Lệnh này sẽ tự động tải MongoDB về và chạy.
 
-2. Cài đặt thư viện Python (Chạy 1 lần duy nhất)
-Vẫn ở Terminal đó, chạy lần lượt:
+# 2. Cài đặt thư viện Python (Chạy 1 lần duy nhất)
+  Vẫn ở Terminal đó, chạy lần lượt:
 
-Windows:
+  Windows:
 
-DOS
+    python -m venv venv
+    venv\Scripts\activate
+    pip install -r requirements.txt
 
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-Ubuntu/Mac:
+  Ubuntu/Mac:
 
-Bash
 
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-3. Chạy Dự án
-Bây giờ mọi thứ đã sẵn sàng, bạn mở 2 cửa sổ Terminal để chạy như bình thường:
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+# 3. Chạy Dự án
+  Bây giờ mọi thứ đã sẵn sàng, bạn mở 2 cửa sổ Terminal để chạy như bình thường:
 
 Terminal 1 (Web Server):
-
-DOS
-
 # Nhớ activate venv trước nếu mở cửa sổ mới
-python -m backend.app  (hoặc python3 ...)
+    python -m backend.app  (hoặc python3 ...)
 Terminal 2 (Data Generator):
-
-DOS
-
-python data_generator.py (hoặc python3 ...)
+    python data_generator.py (hoặc python3 ...)
